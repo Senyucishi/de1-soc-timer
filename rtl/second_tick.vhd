@@ -22,10 +22,14 @@ begin
     process (clk)
     begin
         if rising_edge(clk) then
-            if reset = '1' or enable = '0' or cycles = CLOCK_HZ - 1 then
+            if reset = '1' then
                 cycles <= 0;
-            else
-                cycles <= cycles + 1;
+            elsif enable = '1' then
+                if cycles = CLOCK_HZ - 1 then
+                    cycles <= 0;
+                else
+                    cycles <= cycles + 1;
+                end if;
             end if;
         end if;
     end process;
