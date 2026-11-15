@@ -19,18 +19,18 @@ entity xskzq is
 end entity;
 
 architecture rtl of xskzq is
-    constant BLANK : bcd_digit := "1111";
-    constant BLANK_PAIR : bcd_digits(1 downto 0) := (others => BLANK);
+    subtype decimal_value is natural range 0 to 99;
+    subtype bcd_pair is bcd_digits(1 downto 0);
 
-    function bcd_pair(number : natural) return bcd_digits is
+    function to_bcd_pair(number : decimal_value) return bcd_pair is
         constant TEN : unsigned(6 downto 0) := to_unsigned(10, 7);
         variable binary : unsigned(6 downto 0);
-        variable pair : bcd_digits(1 downto 0);
     begin
-        binary  := to_unsigned(number, binary'length);
-        pair(1) := std_logic_vector(resize(binary / TEN, 4));
-        pair(0) := std_logic_vector(resize(binary mod TEN, 4));
-        return pair;
+        binary := to_unsigned(number, binary'length);
+        return (
+            1 => std_logic_vector(resize(binary / TEN, 4)),
+            0 => std_logic_vector(resize(binary mod TEN, 4))
+        );
     end function;
 
     signal page : std_logic_vector(1 downto 0);
@@ -41,17 +41,42 @@ begin
         "10"        when set_year | set_weekday,
         page_select when running;
 
-    -- Board digits have separate segment lines. Digits run from HEX5 to HEX0.
     process (page, seconds, minutes, hours, day, month, year_digits, weekday)
+        variable left_value, middle_value, right_value : decimal_value;
+        variable left_digits, middle_digits, right_digits : bcd_pair;
     begin
+        -- Select values before conversion. Each pair drives one group on the board.
         case page is
-            when "01" =>
-                digits <= BLANK_PAIR & bcd_pair(month) & bcd_pair(day);
-            when "10" | "11" =>
-                digits <= bcd_pair(20) & bcd_pair(year_digits) & BLANK &
-                          std_logic_vector(to_unsigned(weekday, 4));
+            when "01" =>   -- YY MM DD
+                left_value   := year_digits;
+                middle_value := month;
+                right_value  := day;
+            when "10" =>   -- YYYY-W
+                left_value   := 20;
+                middle_value := year_digits;
+                right_value  := weekday;
+            when "11" =>   -- Fixed pattern for checking the board's digit order.
+                left_value   := 12;
+                middle_value := 34;
+                right_value  := 56;
             when others =>
-                digits <= bcd_pair(hours) & bcd_pair(minutes) & bcd_pair(seconds);
+                left_value   := hours;
+                middle_value := minutes;
+                right_value  := seconds;
         end case;
+
+        left_digits   := to_bcd_pair(left_value);
+        middle_digits := to_bcd_pair(middle_value);
+        right_digits  := to_bcd_pair(right_value);
+        if page = "10" then
+            right_digits(1) := DISPLAY_DASH;
+        end if;
+
+        -- The indices match the HEX port numbers. HEX5 is leftmost.
+        digits <= (
+            5 => left_digits(1),   4 => left_digits(0),
+            3 => middle_digits(1), 2 => middle_digits(0),
+            1 => right_digits(1),  0 => right_digits(0)
+        );
     end process;
 end architecture;

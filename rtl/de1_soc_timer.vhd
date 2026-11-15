@@ -64,10 +64,16 @@ begin
                   hours => hours, day => day, month => month, year_digits => year_digits,
                   weekday => weekday, digits => digits);
 
-    decode_hex0 : entity work.seven_segment_decoder port map (digit => digits(0), hex_n => HEX0);
-    decode_hex1 : entity work.seven_segment_decoder port map (digit => digits(1), hex_n => HEX1);
-    decode_hex2 : entity work.seven_segment_decoder port map (digit => digits(2), hex_n => HEX2);
-    decode_hex3 : entity work.seven_segment_decoder port map (digit => digits(3), hex_n => HEX3);
-    decode_hex4 : entity work.seven_segment_decoder port map (digit => digits(4), hex_n => HEX4);
-    decode_hex5 : entity work.seven_segment_decoder port map (digit => digits(5), hex_n => HEX5);
+    decode_hex0 : entity work.seven_segment_decoder
+        port map (clk => CLOCK_50, digit => digits(0), hex_n => HEX0);
+    decode_hex1 : entity work.seven_segment_decoder
+        port map (clk => CLOCK_50, digit => digits(1), hex_n => HEX1);
+    decode_hex2 : entity work.seven_segment_decoder
+        port map (clk => CLOCK_50, digit => digits(2), hex_n => HEX2);
+    decode_hex3 : entity work.seven_segment_decoder
+        port map (clk => CLOCK_50, digit => digits(3), hex_n => HEX3);
+    decode_hex4 : entity work.seven_segment_decoder
+        port map (clk => CLOCK_50, digit => digits(4), hex_n => HEX4);
+    decode_hex5 : entity work.seven_segment_decoder
+        port map (clk => CLOCK_50, digit => digits(5), hex_n => HEX5);
 end architecture;
